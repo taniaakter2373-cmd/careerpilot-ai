@@ -1,0 +1,36 @@
+{
+  "name": "careerpilot-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CareerPilot AI — AI Job Search, Matching & Application Assistant",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @careerpilot/api\" \"npm run dev -w @careerpilot/web\"",
+    "start": "concurrently -n api,web -c blue,green \"npm run start -w @careerpilot/api\" \"npm run start -w @careerpilot/web\"",
+    "setup": "npm run db:migrate && npm run db:seed",
+    "postinstall": "prisma generate --schema=packages/database/prisma/schema.prisma",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run db:generate -w @careerpilot/database",
+    "db:migrate": "npm run db:migrate -w @careerpilot/database",
+    "db:seed": "npm run db:seed -w @careerpilot/database"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "@prisma/client@5.22.0": true,
+    "prisma@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "esbuild@0.28.2": true,
+    "esbuild@0.21.5": true
+  }
+}

@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Database
+*.db
+*.db-journal
+prisma/*.db
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+
+# Playwright
+.playwright/
+test-results/
+
+# Logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Uploads (CVs, letters) — runtime artifacts
+uploads/
+storage/
+.vercel
+.env*
+!.env.example

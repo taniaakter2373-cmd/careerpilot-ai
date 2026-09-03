@@ -1,0 +1,652 @@
+// CareerPilot AI — Prisma schema
+//
+// Dev default: SQLite (DATABASE_URL="file:./dev.db") so the app runs with no
+// external database. For production, switch `provider` to "postgresql" and set
+// DATABASE_URL to a PostgreSQL connection string (see README).
+//
+// Status fields are stored as String (not native enums) to stay portable
+// across SQLite and PostgreSQL; valid values are enforced by @careerpilot/shared.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  name             String
+  passwordHash     String
+  role             String   @default("USER")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  candidateProfile CandidateProfile?
+  auditLogs        AuditLog[]
+}
+
+model CandidateProfile {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                 String
+  email                String
+  phone                String?
+  location             String?
+  country              String?
+  currentTitle         String?
+  yearsExperience      Float?
+  education            String?
+  summary              String?
+  noticePeriod         String?
+  linkedinUrl          String?
+  portfolioUrl         String?
+  salaryMin            Float?
+  salaryCurrency       String?
+  remotePreference     String?
+  employmentPreference String?
+  certifications       String?
+  targetRoles          String?
+  preferredLocations   String?
+  careerGoals          String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  skills               CandidateSkill[]
+}
+
+model CandidateSkill {
+  id        String           @id @default(cuid())
+  profileId String
+  profile   CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime         @default(now())
+
+  @@index([profileId])
+}
+
+model Cv {
+  id            String   @id @default(cuid())
+  userId        String
+  name          String
+  filePath      String?
+  version       Int      @default(1)
+  targetRole    String?
+  targetCountry String?
+  skills        String?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Job {
+  id                     String   @id @default(cuid())
+  source                 String
+  sourceJobId            String?
+  url                    String   @unique
+  title                  String
+  company                String
+  companyUrl             String?
+  location               String?
+  country                String?
+  city                   String?
+  remoteType             String   @default("ANY")
+  employmentType         String   @default("ANY")
+  industry               String?
+  department             String?
+  salaryMin              Float?
+  salaryMax              Float?
+  salaryCurrency         String?
+  description            String   @default("")
+  requirements           String?
+  responsibilities       String?
+  educationRequirements  String?
+  experienceRequired     String?
+  skills                 String?
+  postedDate             DateTime?
+  closingDate            DateTime?
+  scrapedAt              DateTime @default(now())
+  applicationMethod      String   @default("MANUAL")
+  applicationUrl         String?
+  duplicateHash          String?
+  status                 String   @default("NEW")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  matches                JobMatch[]
+  applications           Application[]
+
+  @@index([status])
+  @@index([company])
+  @@index([title])
+  @@index([duplicateHash])
+  @@index([scrapedAt])
+}
+
+model JobMatch {
+  id                       String   @id @default(cuid())
+  jobId                    String
+  job                      Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  overallScore             Float
+  breakdown                String
+  weights                  String
+  whyMatched               String?
+  missingRequirements      String?
+  riskFlags                String?
+  recommendation           String
+  action                   String
+  hardRequirementFailure   Boolean  @default(false)
+  targetCompanyBonus       Boolean  @default(false)
+  createdAt                DateTime @default(now())
+
+  @@unique([jobId])
+  @@index([overallScore])
+}
+
+model Application {
+  id                 String    @id @default(cuid())
+  jobId              String
+  job                Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateId        String?
+  cvId               String?
+  coverLetterId      String?
+  applicationDate    DateTime?
+  applicationMethod  String    @default("MANUAL")
+  mode               String    @default("MANUAL")
+  status             String    @default("PREPARED")
+  applicationUrl     String?
+  confirmationNumber String?
+  notes              String?
+  nextFollowUpDate   DateTime?
+  recruiterName      String?
+  recruiterEmail     String?
+  interviewDate      DateTime?
+  offerStatus        String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([status])
+  @@index([jobId])
+}
+
+model CoverLetter {
+  id        String   @id @default(cuid())
+  jobId     String
+  cvId      String?
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+}
+
+model ApplicationAnswer {
+  id            String   @id @default(cuid())
+  applicationId String
+  question      String
+  answer        String
+  status        String   @default("ANSWERED")
+  source        String   @default("VERIFIED")
+  createdAt     DateTime @default(now())
+
+  @@index([applicationId])
+}
+
+model Interview {
+  id            String    @id @default(cuid())
+  applicationId String
+  scheduledAt   DateTime?
+  round         String?
+  interviewer   String?
+  notes         String?
+  status        String    @default("SCHEDULED")
+  createdAt     DateTime  @default(now())
+
+  @@index([applicationId])
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  url       String?
+  industry  String?
+  createdAt DateTime @default(now())
+}
+
+model TargetCompany {
+  id        String   @id @default(cuid())
+  userId    String
+  company   String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model JobSource {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  type      String
+  config    String?
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  channel   String   @default("IN_APP")
+  title     String
+  body      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+model AutomationRule {
+  id        String   @id @default(cuid())
+  userId    String
+  source    String
+  action    String
+  enabled   Boolean  @default(false)
+  config    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id                String   @id @default(cuid())
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  jobId             String?
+  action            String
+  oldStatus         String?
+  newStatus         String?
+  applicationMethod String?
+  result            String?
+  error             String?
+  browserSessionId  String?
+  metadata          String?
+  createdAt         DateTime @default(now())
+
+  @@index([jobId])
+  @@index([createdAt])
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// =============================================================================
+// ScholarshipPilot — Erasmus Mundus (EMJM) module
+// =============================================================================
+
+model ErasmusProgramme {
+  id                     String   @id @default(cuid())
+  programmeName          String
+  acronym                String?
+  officialUrl            String?
+  applicationUrl         String?
+  coordinator            String?
+  partnerUniversities    String?
+  countries              String?
+  field                  String?
+  degreeType             String?
+  duration               String?
+  ects                   Int?
+  scholarshipAvailable   Boolean  @default(true)
+  scholarshipDescription String?
+  applicationDeadline    DateTime?
+  scholarshipDeadline    DateTime?
+  programmeStart         DateTime?
+  eligibility            String?
+  academicRequirements   String?
+  experienceRequirements String?
+  languageRequirements   String?
+  requiredDocuments      String?
+  selectionProcess       String?
+  applicationMethod      String   @default("MANUAL")
+  sourceUrl              String?
+  sourceTitle            String?
+  sourceLastVerified     DateTime?
+  deadlineStatus         String   @default("UNVERIFIED")
+  status                 String   @default("NEW")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  matches                ScholarshipMatch[]
+
+  @@index([field])
+  @@index([status])
+  @@index([applicationDeadline])
+}
+
+model ScholarshipMatch {
+  id                String           @id @default(cuid())
+  programmeId       String
+  programme         ErasmusProgramme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  overallScore      Float
+  breakdown         String
+  weights           String
+  whyFits           String?
+  eligibilityGaps   String?
+  documentGaps      String?
+  priorityScore     Float
+  eligibilityStatus String
+  recommendation    String
+  createdAt         DateTime         @default(now())
+
+  @@unique([programmeId])
+  @@index([overallScore])
+}
+
+model ScholarshipProfile {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  fullName                String
+  dateOfBirth             DateTime?
+  nationality             String?
+  countryOfResidence      String?
+  email                   String?
+  phone                   String?
+  passportStatus          String?
+  passportExpiry          DateTime?
+  academicDegrees         String?
+  cgpa                    Float?
+  gradingScale            String?
+  universities            String?
+  graduationDates         String?
+  workExperience          String?
+  jobTitles               String?
+  employers               String?
+  professionalSkills      String?
+  researchExperience      String?
+  leadershipExperience    String?
+  volunteerExperience     String?
+  internationalExperience String?
+  certifications          String?
+  languageSkills          String?
+  englishTest            String?
+  ieltsScore             Float?
+  toeflScore             Float?
+  otherLanguageTests     String?
+  publications           String?
+  projects               String?
+  awards                 String?
+  professionalMemberships String?
+  careerGoals            String?
+  preferredStudyFields   String?
+  preferredCountries     String?
+  preferredProgrammes    String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model ScholarshipDocument {
+  id           String   @id @default(cuid())
+  candidateId  String
+  programmeId  String?
+  documentType String
+  filePath     String?
+  version      Int      @default(1)
+  status       String   @default("MISSING")
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([candidateId])
+  @@index([documentType])
+}
+
+model ScholarshipApplication {
+  id                  String    @id @default(cuid())
+  programmeId         String
+  candidateId         String?
+  applicationDate     DateTime?
+  deadline            DateTime?
+  scholarshipDeadline DateTime?
+  status              String    @default("RESEARCHING")
+  applicationUrl      String?
+  confirmationNumber  String?
+  documentsSubmitted  String?
+  motivationLetterId  String?
+  sopId               String?
+  cvId                String?
+  notes               String?
+  nextAction          String?
+  nextActionDate      DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([status])
+  @@index([programmeId])
+  @@index([deadline])
+}
+
+// =============================================================================
+// FamilyRelocationPilot + ParentWorkPilot
+// =============================================================================
+
+model ChildProfile {
+  id                         String    @id @default(cuid())
+  userId                     String?
+  fullName                   String
+  dateOfBirth                DateTime?
+  nationality                String?
+  passportStatus             String?
+  currentSchool              String?
+  currentGrade               String?
+  language                   String?
+  specialSchoolingRequirements String?
+  preferredSchoolingLanguage String?
+  preferredCurriculum        String?
+  preferredCountry           String?
+  preferredCity              String?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model FamilyAssessment {
+  id                String   @id @default(cuid())
+  programmeId       String
+  childId           String?
+  country           String?
+  studyScore        Float
+  fundingScore      Float
+  childScore        Float
+  schoolingScore    Float
+  costScore         Float
+  visaScore         Float
+  safetyScore       Float
+  longTermScore     Float
+  parentWorkScore   Float
+  parentJobsScore   Float
+  overallScore      Float
+  recommendation    String
+  childStatus       String?
+  workRightsNote    String?
+  source            String?
+  createdAt         DateTime @default(now())
+
+  @@index([programmeId])
+  @@index([overallScore])
+}
+
+model School {
+  id                          String   @id @default(cuid())
+  schoolName                  String
+  country                     String?
+  city                        String?
+  curriculum                  String?
+  language                    String?
+  ageRange                    String?
+  admissionRequirement        String?
+  tuitionFee                  String?
+  applicationFee              String?
+  internationalStudentPolicy  String?
+  website                     String?
+  source                      String?
+  lastVerified                DateTime?
+  createdAt                   DateTime @default(now())
+  applications                SchoolApplication[]
+
+  @@index([country])
+}
+
+model SchoolApplication {
+  id                String    @id @default(cuid())
+  schoolId          String
+  school            School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  childId           String?
+  status            String    @default("RESEARCHING")
+  applicationDate   DateTime?
+  deadline          DateTime?
+  notes             String?
+  confirmationNumber String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([schoolId])
+  @@index([status])
+}
+
+// =============================================================================
+// UmrahPilot — verified fully-funded Umrah opportunities
+// =============================================================================
+
+model UmrahOpportunity {
+  id                  String   @id @default(cuid())
+  title               String
+  sponsor             String?
+  officialUrl         String?
+  announcementUrl     String?
+  announcementDate    DateTime?
+  applicationDeadline DateTime?
+  travelPeriod        String?
+  eligibility         String?
+  visaCovered         Boolean  @default(false)
+  flightCovered       Boolean  @default(false)
+  makkahHotelCovered  Boolean  @default(false)
+  madinahHotelCovered Boolean  @default(false)
+  foodCovered         Boolean  @default(false)
+  transportCovered    Boolean  @default(false)
+  insuranceCovered    String   @default("NO") // YES | NOT_REQUIRED | NO
+  mandatoryFeesCovered Boolean @default(false)
+  childCovered        Boolean  @default(false)
+  coveredExpenses     String?
+  excludedExpenses    String?
+  confidence          String   @default("LOW")
+  verificationDate    DateTime?
+  classification      String   @default("SELF_FUNDED")
+  isFullyFree         Boolean  @default(false)
+  status              String   @default("OPEN") // OPEN | UPCOMING | EXPIRED | CLOSED
+  bangladeshEligible  String   @default("NOT_CONFIRMED") // YES | NO | NOT_CONFIRMED
+  riskLevel           String   @default("LOW") // LOW | MEDIUM | HIGH | CRITICAL
+  riskFlags           String?
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([isFullyFree])
+  @@index([classification])
+}
+
+model UmrahApplication {
+  id                  String    @id @default(cuid())
+  umrahId             String
+  status              String    @default("PREPARING") // PREPARING | READY_FOR_REVIEW | APPROVED | MANUAL_REQUIRED
+  applicationDate     DateTime?
+  notes               String?
+  confirmationNumber  String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([umrahId])
+  @@index([status])
+}
+
+// =============================================================================
+// Module 5 — Professional Certification Finder
+// =============================================================================
+
+model Certification {
+  id               String   @id @default(cuid())
+  name             String
+  provider         String?
+  category         String?
+  url              String?
+  originalCostUsd  Float    @default(0)
+  scholarshipPct   Float    @default(0)
+  finalCostUsd     Float    @default(0)
+  durationWeeks    Int?
+  mode             String   @default("ONLINE")
+  certificateOffered Boolean @default(true)
+  recognition      String   @default("MEDIUM") // HIGH | MEDIUM | LOW
+  skills           String?
+  applicationDeadline DateTime?
+  matchScore       Float    @default(0)
+  costClass        String   @default("EXPENSIVE")
+  notes            String?
+  source           String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  applications     CertificationApplication[]
+
+  @@index([costClass])
+  @@index([matchScore])
+}
+
+model CertificationApplication {
+  id                 String    @id @default(cuid())
+  certificationId    String
+  certification      Certification @relation(fields: [certificationId], references: [id], onDelete: Cascade)
+  status             String    @default("RESEARCHING") // RESEARCHING | PREPARING | READY_FOR_REVIEW | APPROVED | SUBMITTED | ACCEPTED | REJECTED
+  applicationDate    DateTime?
+  deadline           DateTime?
+  notes              String?
+  confirmationNumber String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([certificationId])
+  @@index([status])
+}
+
+// =============================================================================
+// Module 6 — Recruiter Contact Tracker
+// =============================================================================
+
+model RecruiterInteraction {
+  id              String    @id @default(cuid())
+  applicationId   String?
+  emailMessageId  String?
+  recruiterName   String?
+  recruiterEmail  String?
+  company         String?
+  jobTitle        String?
+  jobLocation     String?
+  country         String?
+  emailSubject    String?
+  emailSummary    String?
+  detectedStage   String    @default("CONTACTED")
+  nextAction      String?
+  nextActionDate  DateTime?
+  actionRequired  Boolean   @default(false)
+  status          String    @default("ACTIVE") // ACTIVE | COMPLETED | FOLLOW_UP
+  priority        String    @default("MEDIUM")
+  lastContactAt   DateTime?
+  lastUserReplyAt DateTime?
+  receivedDate    DateTime  @default(now())
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([applicationId])
+  @@index([status])
+}
