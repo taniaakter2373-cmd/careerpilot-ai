@@ -75,6 +75,8 @@ interface RecruiterContact {
 interface EuropeOverview {
   totalJobs: number;
   applyNowJobs: number;
+  countryCards: Array<{ country: string }>;
+  englishProfile: { ieltsStatus: string; ieltsOverallBand: number | null } | null;
 }
 
 interface AwardsList {
@@ -128,6 +130,46 @@ function AgentPill({ label, state }: { label: string; state: "live" | "ready" })
   );
 }
 
+const toneMap: Record<string, { icon: string; text: string; btn: string }> = {
+  emerald: { icon: "bg-emerald-50 text-emerald-600", text: "", btn: "bg-emerald-600 hover:bg-emerald-700" },
+  brand: { icon: "bg-brand-50 text-brand-600", text: "", btn: "bg-brand-600 hover:bg-brand-700" },
+  slate: { icon: "bg-slate-100 text-slate-500", text: "", btn: "bg-slate-700 hover:bg-slate-800" },
+  violet: { icon: "bg-violet-50 text-violet-600", text: "", btn: "bg-violet-600 hover:bg-violet-700" },
+  blue: { icon: "bg-blue-50 text-blue-600", text: "", btn: "bg-blue-600 hover:bg-blue-700" },
+  amber: { icon: "bg-amber-50 text-amber-600", text: "", btn: "bg-amber-600 hover:bg-amber-700" },
+};
+
+function MiniCard({
+  emoji,
+  title,
+  count,
+  label,
+  href,
+  tone,
+}: {
+  emoji: string;
+  title: string;
+  count: number;
+  label: string;
+  href: string;
+  tone: keyof typeof toneMap;
+}) {
+  const t = toneMap[tone] ?? toneMap.slate;
+  return (
+    <Link href={href} className="group card flex items-center gap-4 p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-lift">
+      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl ${t.icon}`}>{emoji}</span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-semibold text-slate-800">{title}</div>
+        <div className="mt-0.5 flex items-baseline gap-1.5">
+          <span className="text-xl font-bold tracking-tight text-slate-900">{count}</span>
+          <span className="truncate text-xs text-slate-400">{label}</span>
+        </div>
+      </div>
+      <span className="text-brand-500 opacity-0 transition group-hover:opacity-100">→</span>
+    </Link>
+  );
+}
+
 export default async function DashboardPage() {
   const [data, schs, family, deadlines, umrah, certs, recruiter, europe, awards] = await Promise.all([
     apiGet<DashboardData>("/api/dashboard"),
@@ -137,7 +179,7 @@ export default async function DashboardPage() {
     apiGet<UmrahRow[]>("/api/umrah"),
     apiGet<Cert[]>("/api/certifications"),
     apiGet<{ contacts: RecruiterContact[] }>("/api/recruiter-contacts").then((d) => d.contacts ?? []),
-    apiGet<EuropeOverview>("/api/europe").catch(() => ({ totalJobs: 0, applyNowJobs: 0 })),
+    apiGet<EuropeOverview>("/api/europe").catch(() => ({ totalJobs: 0, applyNowJobs: 0, countryCards: [], englishProfile: null })),
     apiGet<AwardsList[]>("/api/awards").catch(() => []),
   ]);
 
@@ -149,123 +191,62 @@ export default async function DashboardPage() {
   const upcoming = [...deadlines.jobs, ...deadlines.scholarships].filter((d) => d.daysRemaining != null && d.daysRemaining >= 0).sort((a, b) => (a.daysRemaining ?? 0) - (b.daysRemaining ?? 0)).slice(0, 5);
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Good day, Tania</h1>
-          <p className="mt-1 text-sm text-slate-500">Your career, study and family-relocation command center</p>
-        </div>
-        <div className="hidden flex-wrap justify-end gap-2 md:flex">
-          <AgentPill label="💼 Job Agent" state="live" />
-          <AgentPill label="🎓 Scholarship Agent" state="live" />
-          <AgentPill label="👨‍👩‍👦 Family Agent" state="live" />
-          <AgentPill label="📅 Deadline Agent" state="live" />
+    <div className="page">
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-600 to-violet-600 p-7 text-white shadow-lg shadow-brand-600/20 sm:p-8">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-20 right-32 h-48 w-48 rounded-full bg-violet-300/20 blur-2xl" />
+        <div className="relative flex flex-wrap items-end justify-between gap-5">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Good day, Tania ✨</h1>
+            <p className="mt-1.5 max-w-xl text-sm text-brand-100">
+              Your command center for European jobs, awards, study and family relocation — with live visa & IELTS intelligence.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> Job Agent
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> Europe Agent
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> Award Agent
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href="/jobs" className="btn-primary !bg-white/15 !text-white backdrop-blur hover:!bg-white/25">Run Job Search</Link>
+            <Link href="/europe/jobs" className="btn-primary !bg-white/15 !text-white backdrop-blur hover:!bg-white/25">Scan Europe</Link>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3">
-        <TakeAllActionsButton />
-        <RefreshButton />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <PathCard emoji="💼" title="Jobs" count={data.strongMatches} label="strong matches" href="/jobs" accent="bg-gradient-to-r from-blue-500 to-indigo-500" />
+      {/* Big path cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <PathCard emoji="💼" title="Job Search" count={data.strongMatches} label="strong matches" href="/jobs" accent="bg-gradient-to-r from-sky-500 to-indigo-500" />
         <PathCard emoji="🎓" title="Scholarships" count={eligibleScholarships} label="you're eligible for" href="/scholarships" accent="bg-gradient-to-r from-emerald-500 to-teal-500" />
         <PathCard emoji="👨‍👩‍👦" title="Study + Family" count={freePathways} label="free pathways" href="/family" accent="bg-gradient-to-r from-amber-500 to-orange-500" />
+        <PathCard emoji="🇪🇺" title="Europe Jobs" count={europe.totalJobs} label="opportunities" href="/europe/jobs" accent="bg-gradient-to-r from-blue-500 to-indigo-500" />
       </div>
 
-      <div className="rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-3xl">🕋</div>
-            <div className="mt-1 text-sm font-medium text-slate-500">Fully-Funded Umrah</div>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold text-slate-900">{umrah.filter((u) => u.verified && u.isFullyFree).length}</div>
-            <div className="text-xs text-slate-400">verified fully-free (BDT 0)</div>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Link href="/umrah" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
-            View Umrah Opportunities
-          </Link>
-          <span className="text-xs text-slate-500">
-            Strict zero-cost rule — only verified all-expenses-covered opportunities count as free.
-          </span>
-        </div>
+      {/* Secondary module row */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <MiniCard emoji="🕋" title="Fully-Funded Umrah" count={umrah.filter((u) => u.verified && u.isFullyFree).length} label="verified fully-free" href="/umrah" tone="emerald" />
+        <MiniCard emoji="🎓" title="Certifications" count={certs.filter((c) => ["FREE", "FULL_SCHOLARSHIP", "LOW_COST"].includes(c.costClass)).length} label="free / funded / low-cost" href="/certifications" tone="brand" />
+        <MiniCard emoji="📧" title="Recruiter Contacts" count={recruiter.filter((r) => r.actionRequired).length} label="action required" href="/recruiter" tone="slate" />
+        <MiniCard emoji="🏆" title="Global Awards" count={strongAwards} label="apply / high-priority" href="/awards" tone="violet" />
+        <MiniCard emoji="🗺️" title="Europe Visa & Countries" count={europe.countryCards?.length ?? 0} label="target countries" href="/europe/countries" tone="blue" />
+        <MiniCard emoji="🗣️" title="IELTS / English" count={europe.englishProfile?.ieltsOverallBand ?? 0} label={europe.englishProfile?.ieltsStatus?.replace(/_/g, " ") ?? "not set"} href="/europe/ielts" tone="amber" />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-3xl">🎓</div>
-              <div className="mt-1 text-sm font-medium text-slate-500">Certifications</div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-slate-900">{certs.filter((c) => ["FREE", "FULL_SCHOLARSHIP", "LOW_COST"].includes(c.costClass)).length}</div>
-              <div className="text-xs text-slate-400">free / funded / low-cost</div>
-            </div>
-          </div>
-          <div className="mt-3">
-            <Link href="/certifications" className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-              Certification Finder
-            </Link>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Pipeline snapshot</h2>
+          <p className="text-sm text-slate-500">Live counts across your active tracks</p>
         </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-3xl">📧</div>
-              <div className="mt-1 text-sm font-medium text-slate-500">Recruiter Contacts</div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-slate-900">{recruiter.filter((r) => r.actionRequired).length}</div>
-              <div className="text-xs text-slate-400">action required</div>
-            </div>
-          </div>
-          <div className="mt-3">
-            <Link href="/recruiter" className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-              Recruiter Tracker
-            </Link>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-blue-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-3xl">🇪🇺</div>
-              <div className="mt-1 text-sm font-medium text-slate-500">Europe Jobs</div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-slate-900">{europe.totalJobs}</div>
-              <div className="text-xs text-slate-400">{europe.applyNowJobs} apply now</div>
-            </div>
-          </div>
-          <div className="mt-3">
-            <Link href="/europe/jobs" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              Europe Opportunity Finder
-            </Link>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-violet-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-3xl">🏆</div>
-              <div className="mt-1 text-sm font-medium text-slate-500">Global Awards</div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-slate-900">{strongAwards}</div>
-              <div className="text-xs text-slate-400">apply / high-priority</div>
-            </div>
-          </div>
-          <div className="mt-3">
-            <Link href="/awards" className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700">
-              Global Award Finder
-            </Link>
-          </div>
+        <div className="flex flex-wrap gap-2">
+          <TakeAllActionsButton />
+          <RefreshButton />
         </div>
       </div>
 
@@ -278,9 +259,9 @@ export default async function DashboardPage() {
           ["Offers", data.offers],
           ["Scholarships", schs.length],
         ].map(([l, v]) => (
-          <div key={String(l)} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div key={String(l)} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-soft">
             <div className="text-xs font-medium text-slate-500">{l}</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-900">{v}</div>
+            <div className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{v}</div>
           </div>
         ))}
       </div>

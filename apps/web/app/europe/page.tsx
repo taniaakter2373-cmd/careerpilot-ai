@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { apiGet } from "@/lib/api";
+import { PageHeader, StatTile, Chip, Disclaimer } from "@/components/ui";
 
 interface Overview {
   totalJobs: number;
@@ -28,107 +29,106 @@ interface Overview {
   disclaimer: string;
 }
 
+const IELTS_LABEL: Record<string, string> = {
+  NOT_AVAILABLE: "Not Available",
+  AVAILABLE: "Available",
+  SCHEDULED: "Scheduled",
+  EXEMPT: "Exempt",
+};
+
 export default async function EuropeOverviewPage() {
   const d = await apiGet<Overview>("/api/europe");
   const p1 = d.jobPriorityBreakdown?.P1 ?? 0;
   const p2 = d.jobPriorityBreakdown?.P2 ?? 0;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">🇪🇺 Europe Career Intelligence</h1>
-        <p className="mt-1 text-sm text-slate-500">EU jobs + visa + IELTS analysis for Mid-Leadership HR targets</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        {["Europe Jobs", "Visa & Countries", "IELTS / English", "Applications"].map((l, i) => {
-          const href = ["/europe/jobs", "/europe/countries", "/europe/ielts", "/europe/applications"][i];
-          return (
-            <Link key={l} href={href} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-              {l}
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Link href="/europe/jobs" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="text-3xl">💼</div>
-          <div className="mt-2 text-3xl font-bold text-slate-900">{d.totalJobs}</div>
-          <div className="text-xs text-slate-400">Europe jobs found</div>
+    <div className="page">
+      <PageHeader
+        title="🇪🇺 Europe Career Intelligence"
+        subtitle="EU jobs + visa + IELTS analysis for Mid-Leadership HR targets"
+      >
+        <Link href="/europe/ielts" className="btn-secondary">
+          🗣️ IELTS / English
         </Link>
-        <Link href="/europe/jobs?priority=P1" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="text-3xl">🔥</div>
-          <div className="mt-2 text-3xl font-bold text-slate-900">{d.applyNowJobs}</div>
-          <div className="text-xs text-slate-400">Apply Now (P1)</div>
-        </Link>
-        <Link href="/europe/jobs?ielts=not_required" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="text-3xl">🟢</div>
-          <div className="mt-2 text-3xl font-bold text-slate-900">{(d.jobPriorityBreakdown?.P1 ?? 0) + (d.jobPriorityBreakdown?.P2 ?? 0)}</div>
-          <div className="text-xs text-slate-400">Strong (P1+P2)</div>
-        </Link>
-      </div>
+      </PageHeader>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Countries</h2>
-            <Link href="/europe/countries" className="text-sm font-medium text-brand-600">Visa detail →</Link>
-          </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {d.countryCards.map((c) => (
-              <div key={c.country} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-slate-800">{c.country}</span>
-                  <span className="text-xs text-slate-500">{c.jobCount} jobs</span>
-                </div>
-                <div className="mt-1 text-[11px] text-slate-500">
-                  {(c.workPermitRoutes ?? []).slice(0, 2).map((r) => r.route).join(" · ") || "Verify official routes"}
-                </div>
-                <div className="mt-1 text-[11px] font-medium text-slate-600">
-                  {(c.englishRequirement?.note ?? "").slice(0, 90) || "English test: verify"}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Your English Profile</h2>
-          {d.englishProfile ? (
-            <div className="mt-2 space-y-1 text-sm text-slate-700">
-              <div>IELTS Status: <b>{d.englishProfile.ieltsStatus.replace(/_/g, " ")}</b></div>
-              {d.englishProfile.ieltsOverallBand ? <div>Overall: <b>{d.englishProfile.ieltsOverallBand}</b></div> : null}
-              <div>Proficiency: <b>{d.englishProfile.englishProficiency.replace(/_/g, " ")}</b></div>
-            </div>
-          ) : (
-            <p className="mt-2 text-sm text-slate-500">Not set — opens as &quot;Not Available&quot;, which never makes you ineligible.</p>
-          )}
-          <Link href="/europe/ielts" className="mt-3 inline-block rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-            Update IELTS / English
-          </Link>
-        </section>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile icon="💼" label="Europe jobs" value={d.totalJobs} sub="live + analysed" href="/europe/jobs" />
+        <StatTile icon="🔥" label="Apply now (P1)" value={d.applyNowJobs} sub="best opportunities" href="/europe/jobs?priority=P1" />
+        <StatTile icon="🟢" label="Strong (P1+P2)" value={p1 + p2} sub="career + visa aligned" href="/europe/jobs" />
+        <StatTile icon="🗺️" label="Target countries" value={d.countryCards.length} sub="routes mapped" href="/europe/countries" />
       </div>
 
       {d.recommended && (
-        <section className="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">⭐ Recommended today</h2>
-          <Link href={`/europe/jobs/${d.recommended.id}`} className="mt-2 block">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="font-semibold text-slate-900">{d.recommended.title}</div>
-                <div className="text-sm text-slate-500">{d.recommended.company ?? "—"} · {d.recommended.country}</div>
-              </div>
-              <div className="text-right text-sm">
-                <div className="font-semibold text-brand-700">Career {d.recommended.careerMatchScore}% · Visa {d.recommended.visaScore}%</div>
-                <div className="text-xs text-slate-500">{d.recommended.recommendedAction}</div>
-              </div>
+        <Link
+          href={`/europe/jobs/${d.recommended.id}`}
+          className="card card-hover flex flex-wrap items-center justify-between gap-4 border-brand-200 bg-gradient-to-br from-brand-50/70 to-white p-5"
+        >
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand-600">⭐ Recommended today</div>
+            <div className="mt-1 truncate text-lg font-bold text-slate-900">{d.recommended.title}</div>
+            <div className="text-sm text-slate-500">
+              {d.recommended.company ?? "—"} · {d.recommended.country}
             </div>
-          </Link>
-        </section>
+            <p className="mt-1 max-w-xl text-xs text-slate-500">{d.recommended.recommendedAction}</p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Chip tone="brand">Career {d.recommended.careerMatchScore}%</Chip>
+            <Chip tone="blue">Visa {d.recommended.visaScore}%</Chip>
+          </div>
+        </Link>
       )}
 
-      <p className="rounded-lg border border-slate-200 bg-white p-3 text-[11px] leading-relaxed text-slate-500">{d.disclaimer}</p>
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Countries</h2>
+          <Link href="/europe/countries" className="link-brand">Full visa detail →</Link>
+        </div>
+        <div className="card-grid">
+          {d.countryCards.map((c) => (
+            <div key={c.country} className="card p-5 transition hover:border-brand-200 hover:shadow-card">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{c.country === "Germany" ? "🇩🇪" : c.country === "France" ? "🇫🇷" : c.country === "Netherlands" ? "🇳🇱" : c.country === "Ireland" ? "🇮🇪" : c.country === "Belgium" ? "🇧🇪" : c.country === "Sweden" ? "🇸🇪" : c.country === "Denmark" ? "🇩🇰" : c.country === "Finland" ? "🇫🇮" : c.country === "Austria" ? "🇦🇹" : "🇵🇹"}</span>
+                  <span className="font-semibold text-slate-900">{c.country}</span>
+                </div>
+                <Chip tone={c.jobCount > 0 ? "emerald" : "slate"}>{c.jobCount} jobs</Chip>
+              </div>
+              <div className="mt-3 space-y-1 text-xs text-slate-500">
+                {(c.workPermitRoutes ?? []).slice(0, 2).map((r) => (
+                  <div key={r.route} className="truncate">
+                    {r.euBlueCard ? "💙 " : ""}
+                    {r.route}
+                  </div>
+                ))}
+                {(c.workPermitRoutes ?? []).length > 2 && <div className="text-slate-400">+{c.workPermitRoutes.length - 2} more routes</div>}
+              </div>
+              {c.englishRequirement?.note && <p className="mt-2 text-[11px] leading-relaxed text-slate-400">{c.englishRequirement.note}</p>}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card flex flex-wrap items-center justify-between gap-4 p-5">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-slate-800">Your English profile</h2>
+          <p className="mt-0.5 text-xs text-slate-400">
+            {d.englishProfile ? (
+              <>
+                IELTS: <b>{d.englishProfile.ieltsOverallBand ?? IELTS_LABEL[d.englishProfile.ieltsStatus] ?? d.englishProfile.ieltsStatus}</b> ·{" "}
+                {d.englishProfile.englishProficiency.replace(/_/g, " ")}
+              </>
+            ) : (
+              "Not set — treated as Not Available, which never makes you ineligible."
+            )}
+          </p>
+        </div>
+        <Link href="/europe/ielts" className="btn-primary">
+          Update IELTS / English
+        </Link>
+      </section>
+
+      <Disclaimer>{d.disclaimer}</Disclaimer>
     </div>
   );
 }

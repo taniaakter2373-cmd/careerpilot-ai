@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { apiGet } from "@/lib/api";
+import { PageHeader, Chip, EmptyState, Disclaimer } from "@/components/ui";
 import { EuropeScanButton } from "@/components/europe-scan-button";
 
 interface EuropeJob {
@@ -19,22 +20,7 @@ interface EuropeJob {
   applicationUrl: string | null;
 }
 
-function scoreColor(n: number): string {
-  if (n >= 85) return "bg-emerald-100 text-emerald-700";
-  if (n >= 70) return "bg-teal-100 text-teal-700";
-  if (n >= 55) return "bg-amber-100 text-amber-700";
-  return "bg-slate-100 text-slate-600";
-}
-
-function ieltsColor(s: string): string {
-  switch (s) {
-    case "NOT_REQUIRED": return "bg-emerald-100 text-emerald-700";
-    case "ENGLISH_PROFICIENCY_REQUIRED": return "bg-teal-100 text-teal-700";
-    case "REQUIRED_BY_EMPLOYER":
-    case "REQUIRED_FOR_VISA": return "bg-orange-100 text-orange-700";
-    default: return "bg-slate-100 text-slate-600";
-  }
-}
+const PRIORITY_TONE: Record<string, "emerald" | "blue" | "amber" | "red"> = { P1: "emerald", P2: "blue", P3: "amber", P4: "red" };
 
 export default async function EuropeJobsPage({ searchParams }: { searchParams: { country?: string; priority?: string; ielts?: string } }) {
   const params = new URLSearchParams();
@@ -45,96 +31,91 @@ export default async function EuropeJobsPage({ searchParams }: { searchParams: {
   const jobs = await apiGet<EuropeJob[]>(`/api/europe/jobs?${params.toString()}`);
 
   const countries = ["Germany", "Netherlands", "Ireland", "France", "Belgium", "Sweden", "Denmark", "Finland", "Austria", "Portugal"];
-  const priorityFilters = [
-    { key: "", label: "All priorities" },
-    { key: "P1", label: "🔥 Apply Now" },
-    { key: "P2", label: "🟢 Strong" },
-    { key: "P3", label: "🟡 Potential" },
-    { key: "P4", label: "🔴 Low" },
-  ];
-  const ieltsFilters = [
-    { key: "", label: "All IELTS" },
-    { key: "not_required", label: "Apply without IELTS" },
-    { key: "required", label: "IELTS required" },
-    { key: "unknown", label: "Unknown" },
-  ];
+  const flag = (c: string) => (c === "Germany" ? "🇩🇪" : c === "France" ? "🇫🇷" : c === "Netherlands" ? "🇳🇱" : c === "Ireland" ? "🇮🇪" : c === "Belgium" ? "🇧🇪" : c === "Sweden" ? "🇸🇪" : c === "Denmark" ? "🇩🇰" : c === "Finland" ? "🇫🇮" : c === "Austria" ? "🇦🇹" : "🇵🇹");
 
-  const make = (country: string, priority: string, ielts: string) => {
+  const make = (patch: Record<string, string>) => {
     const p = new URLSearchParams();
-    if (country) p.set("country", country);
-    if (priority) p.set("priority", priority);
-    if (ielts) p.set("ielts", ielts);
+    const next = { country: searchParams.country ?? "", priority: searchParams.priority ?? "", ielts: searchParams.ielts ?? "", ...patch };
+    if (next.country) p.set("country", next.country);
+    if (next.priority) p.set("priority", next.priority);
+    if (next.ielts) p.set("ielts", next.ielts);
     return `/europe/jobs?${p.toString()}`;
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">🌍 Europe Jobs</h1>
-          <p className="text-sm text-slate-500">Mid-Leadership HR opportunities across the EU with visa + IELTS analysis</p>
-        </div>
-        <EuropeScanButton />
-      </div>
+  const pill = (active: boolean) => (active ? "rounded-xl bg-brand-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm" : "rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50");
 
-      <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+  return (
+    <div className="page">
+      <PageHeader title="🌍 Europe Jobs" subtitle="Mid-Leadership HR roles across the EU — each with career, visa, IELTS and sponsorship analysis">
+        <EuropeScanButton />
+      </PageHeader>
+
+      {/* Filters */}
+      <div className="card space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="px-1 text-xs font-medium text-slate-400">Country:</span>
-          {["", ...countries].map((c) => (
-            <Link key={c || "all"} href={make(c === searchParams.country ? "" : c, searchParams.priority ?? "", searchParams.ielts ?? "")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                (searchParams.country ?? "") === c ? "bg-brand-600 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}>
-              {c || "All"}
+          <span className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Country</span>
+          <Link href={make({ country: "" })} className={pill(!searchParams.country)}>All</Link>
+          {countries.map((c) => (
+            <Link key={c} href={make({ country: searchParams.country === c ? "" : c })} className={pill(searchParams.country === c)}>
+              {flag(c)} {c}
             </Link>
           ))}
         </div>
-        <div className="mt-2 flex flex-wrap gap-2 border-t border-slate-100 pt-2">
-          {priorityFilters.map((f) => (
-            <Link key={f.key} href={make(searchParams.country ?? "", f.key === (searchParams.priority ?? "") ? "" : f.key, searchParams.ielts ?? "")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                (searchParams.priority ?? "") === f.key ? "bg-brand-600 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}>
-              {f.label}
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+          <span className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Fit</span>
+          <Link href={make({ priority: "" })} className={pill(!searchParams.priority)}>All priorities</Link>
+          {[["P1", "🔥 Apply Now"], ["P2", "🟢 Strong"], ["P3", "🟡 Potential"], ["P4", "🔴 Low"]].map(([k, l]) => (
+            <Link key={k} href={make({ priority: searchParams.priority === k ? "" : k })} className={pill(searchParams.priority === k)}>
+              {l}
             </Link>
           ))}
-          <span className="mx-1 border-l border-slate-200" />
-          {ieltsFilters.map((f) => (
-            <Link key={f.key} href={make(searchParams.country ?? "", searchParams.priority ?? "", f.key === (searchParams.ielts ?? "") ? "" : f.key)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                (searchParams.ielts ?? "") === f.key ? "bg-brand-600 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}>
-              {f.label}
-            </Link>
-          ))}
+          <span className="mx-1 h-4 w-px bg-slate-200" />
+          <span className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">IELTS</span>
+          <Link href={make({ ielts: "" })} className={pill(!searchParams.ielts)}>Any</Link>
+          <Link href={make({ ielts: "not_required" })} className={pill(searchParams.ielts === "not_required")}>✓ Apply without IELTS</Link>
+          <Link href={make({ ielts: "required" })} className={pill(searchParams.ielts === "required")}>IELTS required</Link>
+          <Link href={make({ ielts: "unknown" })} className={pill(searchParams.ielts === "unknown")}>Verify</Link>
         </div>
       </div>
 
       {jobs.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-          No European jobs yet. Click <b>Scan Europe Jobs</b> to pull live opportunities (Arbeitnow / Jobicy / RemoteOK) and run the visa + IELTS analysis.
-        </p>
+        <EmptyState icon="🔍" title="No European jobs match this filter yet" hint="Click “Scan Europe Jobs” to pull live opportunities and run the visa + IELTS analysis, or widen your filters." />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="card-grid">
           {jobs.map((j) => (
-            <Link key={j.id} href={`/europe/jobs/${j.id}`}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <Link key={j.id} href={`/europe/jobs/${j.id}`} className="card card-hover flex flex-col gap-3 p-5">
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold text-slate-900">{j.title}</h3>
-                <span className={`shrink-0 rounded-lg px-2 py-1 text-xs font-bold ${scoreColor(j.careerMatchScore)}`}>{j.careerMatchScore}%</span>
+                <div className="min-w-0">
+                  <h3 className="font-semibold leading-snug text-slate-900">{j.title}</h3>
+                  <p className="mt-0.5 truncate text-sm text-slate-500">
+                    {j.company ?? "—"} · {flag(j.country)} {j.country}
+                    {j.city ? `, ${j.city}` : ""}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-slate-500">{j.company ?? "—"} · {j.country}{j.city ? `, ${j.city}` : ""}</p>
-              <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600">Career {j.careerMatchScore}%</span>
-                <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700">Visa {j.visaScore}%</span>
-                <span className={`rounded-full px-2 py-0.5 font-medium ${ieltsColor(j.ieltsStatus)}`}>{j.ieltsStatus.replace(/_/g, " ")}</span>
+
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <Chip tone="brand">Career {j.careerMatchScore}%</Chip>
+                <Chip tone="blue">Visa {j.visaScore}%</Chip>
+                <Chip tone={j.ieltsStatus === "NOT_REQUIRED" ? "emerald" : j.ieltsStatus === "ENGLISH_PROFICIENCY_REQUIRED" ? "teal" : j.ieltsStatus.includes("REQUIRED") ? "amber" : "slate"}>
+                  {j.ieltsStatus.replace(/_/g, " ")}
+                </Chip>
               </div>
-              <div className="mt-2 text-xs font-semibold text-slate-800">{j.jobPriorityLabel}</div>
-              <p className="mt-1 line-clamp-2 text-xs text-slate-500">{j.sponsorshipLabel}</p>
+
+              <div className="mt-auto space-y-1.5">
+                <Chip tone={PRIORITY_TONE[j.jobPriority] ?? "slate"}>{j.jobPriorityLabel}</Chip>
+                <p className="text-[11px] leading-relaxed text-slate-400">{j.sponsorshipLabel}</p>
+              </div>
             </Link>
           ))}
         </div>
       )}
+
+      <Disclaimer>
+        Visa eligibility, sponsorship and IELTS requirements are AI-based preliminary assessments — not legal or immigration advice. Final eligibility
+        depends on the country&apos;s current rules, the employer and competent authorities. Always verify against official sources. Not having IELTS never
+        blocks a job by itself.
+      </Disclaimer>
     </div>
   );
 }
