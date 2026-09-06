@@ -205,6 +205,16 @@ export function evidenceStrength(profile: AwardProfile): { score: number; missin
   const found: string[] = [];
   const missing: string[] = [];
 
+  const LABELS: Record<string, string> = {
+    scale: "Headcount / employee population you influenced",
+    savings: "Measured cost saving or budget managed",
+    productivity: "Productivity or process-improvement metric",
+    people: "Talent / engagement / retention outcome",
+    reward: "Compensation & rewards programme delivered",
+    digital: "HR system / dashboard / automation you built",
+    leadership: "Team or transformation you led",
+  };
+
   for (const [key, tokens] of Object.entries(EVIDENCE_KEYWORDS)) {
     const matched = profile.skills.some((s) => hasAny(s, tokens)) || profile.currentTitle !== null && profile.currentTitle.toLowerCase().includes(key);
     // require a plausible title/role tie for leadership+reward which the profile
@@ -214,7 +224,7 @@ export function evidenceStrength(profile: AwardProfile): { score: number; missin
     } else if (matched) {
       found.push(key);
     } else {
-      missing.push(key);
+      missing.push(LABELS[key] ?? key);
     }
   }
 

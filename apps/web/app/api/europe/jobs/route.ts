@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   const where: Record<string, unknown> = { status: { not: "HIDDEN" } };
   if (country) where.country = country;
   if (priority) where.jobPriority = priority;
-  if (ielts === "not_required") where.ieltsStatus = "NOT_REQUIRED";
+  if (ielts === "not_required") where.ieltsStatus = { in: ["NOT_REQUIRED", "ENGLISH_PROFICIENCY_REQUIRED"] };
   if (ielts === "unknown") where.ieltsStatus = "UNKNOWN";
   if (ielts === "required") where.ieltsStatus = { in: ["REQUIRED_BY_EMPLOYER", "REQUIRED_FOR_VISA"] };
   if (q) where.OR = [{ title: { contains: q } }, { company: { contains: q } }];
