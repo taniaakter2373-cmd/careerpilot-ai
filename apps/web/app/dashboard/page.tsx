@@ -75,8 +75,9 @@ interface RecruiterContact {
 interface EuropeOverview {
   totalJobs: number;
   applyNowJobs: number;
+  applyWithoutIelts: number;
   countryCards: Array<{ country: string }>;
-  englishProfile: { ieltsStatus: string; ieltsOverallBand: number | null } | null;
+  englishProfile: { ieltsStatus: string; ieltsOverallBand: number | null; hasEnglishCertificate?: boolean } | null;
 }
 
 interface AwardsList {
@@ -179,7 +180,7 @@ export default async function DashboardPage() {
     apiGet<UmrahRow[]>("/api/umrah"),
     apiGet<Cert[]>("/api/certifications"),
     apiGet<{ contacts: RecruiterContact[] }>("/api/recruiter-contacts").then((d) => d.contacts ?? []),
-    apiGet<EuropeOverview>("/api/europe").catch(() => ({ totalJobs: 0, applyNowJobs: 0, countryCards: [], englishProfile: null })),
+    apiGet<EuropeOverview>("/api/europe").catch(() => ({ totalJobs: 0, applyNowJobs: 0, applyWithoutIelts: 0, countryCards: [], englishProfile: null })),
     apiGet<AwardsList[]>("/api/awards").catch(() => []),
   ]);
 
@@ -236,7 +237,7 @@ export default async function DashboardPage() {
         <MiniCard emoji="📧" title="Recruiter Contacts" count={recruiter.filter((r) => r.actionRequired).length} label="action required" href="/recruiter" tone="slate" />
         <MiniCard emoji="🏆" title="Global Awards" count={strongAwards} label="apply / high-priority" href="/awards" tone="violet" />
         <MiniCard emoji="🗺️" title="Europe Visa & Countries" count={europe.countryCards?.length ?? 0} label="target countries" href="/europe/countries" tone="blue" />
-        <MiniCard emoji="🗣️" title="IELTS / English" count={europe.englishProfile?.ieltsOverallBand ?? 0} label={europe.englishProfile?.ieltsStatus?.replace(/_/g, " ") ?? "not set"} href="/europe/ielts" tone="amber" />
+        <MiniCard emoji="✅" title="Apply without IELTS" count={europe.applyWithoutIelts} label="EU jobs · no English test needed" href="/europe/jobs?ielts=not_required" tone="emerald" />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

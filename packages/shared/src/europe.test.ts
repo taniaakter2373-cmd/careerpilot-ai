@@ -124,3 +124,35 @@ describe("europeJobPriority", () => {
     expect(r.priority).toBe("P4");
   });
 });
+
+describe("no-English-certificate policy", () => {
+  // Candidate has no certificate: NOT_AVAILABLE, no scores.
+  const noCert: EnglishProfileInput = { ieltsStatus: "NOT_AVAILABLE", ieltsOverallBand: null, toeflScore: null, pteScore: null, duolingoScore: null, otherEnglishTest: "NONE" };
+
+  it("employer REQUIRES IELTS + no certificate => GAP, not apply-now, but never rejected", () => {
+    const signals = parseJobEnglishSignals("Candidates must hold IELTS band 6.5. English required.");
+    const d = evaluateIelts(signals, false, noCert);
+    expect(d.status).toBe("REQUIRED_BY_EMPLOYER");
+    expect(d.applyImmediately).toBe(false);
+    expect(d.eligibilityImpact).toBe("GAP");
+    const pr = europeJobPriority({ careerMatch: 90, visaScore: 85, sponsorship: "EXPLICIT", noIeltsBarrier: d.applyImmediately, ieltsGap: d.eligibilityImpact === "GAP", relocation: "YES" });
+    // Even a 90/85 career+visa job cannot be P1/P2 while the employer demands a
+    // test the candidate does not hold.
+    expect(["P1", "P2"]).not.toContain(pr.priority);
+  });
+
+  it("employer asks for English proficiency only + no certificate => apply now allowed (can be P1)", () => {
+    const d = evaluateIelts({ englishRequired: true }, false, noCert);
+    expect(d.status).toBe("ENGLISH_PROFICIENCY_REQUIRED");
+    expect(d.applyImmediately).toBe(true);
+    expect(d.eligibilityImpact).toBe("NONE");
+    const pr = europeJobPriority({ careerMatch: 80, visaScore: 75, sponsorship: "POSSIBLE", noIeltsBarrier: d.applyImmediately, ieltsGap: false, relocation: "NO" });
+    expect(pr.priority).toBe("P1");
+  });
+
+  it("no mention + no certificate => NOT_REQUIRED, apply now", () => {
+    const d = evaluateIelts({}, false, noCert);
+    expect(d.status).toBe("NOT_REQUIRED");
+    expect(d.applyImmediately).toBe(true);
+  });
+});

@@ -7,6 +7,9 @@ import { PageHeader, StatTile, Chip, Disclaimer } from "@/components/ui";
 interface Overview {
   totalJobs: number;
   applyNowJobs: number;
+  applyWithoutIelts: number;
+  needsEnglishTest: number;
+  ieltsUnknown: number;
   jobPriorityBreakdown: Record<string, number>;
   countryCards: Array<{
     country: string;
@@ -25,7 +28,7 @@ interface Overview {
     jobPriority: string;
     recommendedAction: string;
   } | null;
-  englishProfile: { ieltsStatus: string; ieltsOverallBand: number | null; englishProficiency: string } | null;
+  englishProfile: { ieltsStatus: string; ieltsOverallBand: number | null; englishProficiency: string; hasEnglishCertificate: boolean } | null;
   disclaimer: string;
 }
 
@@ -55,9 +58,33 @@ export default async function EuropeOverviewPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile icon="💼" label="Europe jobs" value={d.totalJobs} sub="live + analysed" href="/europe/jobs" />
         <StatTile icon="🔥" label="Apply now (P1)" value={d.applyNowJobs} sub="best opportunities" href="/europe/jobs?priority=P1" />
-        <StatTile icon="🟢" label="Strong (P1+P2)" value={p1 + p2} sub="career + visa aligned" href="/europe/jobs" />
+        <StatTile icon="✅" label="Apply without IELTS" value={d.applyWithoutIelts} sub="no English test needed" href="/europe/jobs?ielts=not_required" />
         <StatTile icon="🗺️" label="Target countries" value={d.countryCards.length} sub="routes mapped" href="/europe/countries" />
       </div>
+
+      {/* English certificate awareness */}
+      <section
+        className={`card flex flex-wrap items-center justify-between gap-4 p-5 ${
+          d.englishProfile?.hasEnglishCertificate ? "border-emerald-200 bg-emerald-50/50" : "border-amber-200 bg-amber-50/50"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">{d.englishProfile?.hasEnglishCertificate ? "✅" : "🗣️"}</span>
+          <div>
+            <h2 className="text-sm font-semibold text-slate-800">
+              {d.englishProfile?.hasEnglishCertificate ? "You have an English test on file" : "No English certificate on file (IELTS / TOEFL / PTE / Duolingo)"}
+            </h2>
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600">
+              {d.englishProfile?.hasEnglishCertificate
+                ? `Your English test is used wherever a job or visa route asks for one.`
+                : `This does NOT make you ineligible. Matching is prioritised by what each job actually requires: ${d.applyWithoutIelts} European jobs need no English test (apply now), ${d.needsEnglishTest} explicitly ask for one (flagged as a Gap — verify if TOEFL/PTE or English-medium study is accepted), and ${d.ieltsUnknown} need verification.`}
+            </p>
+          </div>
+        </div>
+        <Link href="/europe/ielts" className="btn-secondary btn-sm shrink-0">
+          Update English profile
+        </Link>
+      </section>
 
       {d.recommended && (
         <Link
@@ -107,25 +134,6 @@ export default async function EuropeOverviewPage() {
             </div>
           ))}
         </div>
-      </section>
-
-      <section className="card flex flex-wrap items-center justify-between gap-4 p-5">
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-slate-800">Your English profile</h2>
-          <p className="mt-0.5 text-xs text-slate-400">
-            {d.englishProfile ? (
-              <>
-                IELTS: <b>{d.englishProfile.ieltsOverallBand ?? IELTS_LABEL[d.englishProfile.ieltsStatus] ?? d.englishProfile.ieltsStatus}</b> ·{" "}
-                {d.englishProfile.englishProficiency.replace(/_/g, " ")}
-              </>
-            ) : (
-              "Not set — treated as Not Available, which never makes you ineligible."
-            )}
-          </p>
-        </div>
-        <Link href="/europe/ielts" className="btn-primary">
-          Update IELTS / English
-        </Link>
       </section>
 
       <Disclaimer>{d.disclaimer}</Disclaimer>

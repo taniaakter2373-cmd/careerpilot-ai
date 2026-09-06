@@ -14,6 +14,7 @@ interface EuropeJob {
   careerMatchScore: number;
   visaScore: number;
   ieltsStatus: string;
+  applyWithoutIelts: boolean;
   jobPriority: string;
   jobPriorityLabel: string;
   sponsorshipLabel: string;
@@ -97,9 +98,11 @@ export default async function EuropeJobsPage({ searchParams }: { searchParams: {
               <div className="flex flex-wrap items-center gap-1.5 text-xs">
                 <Chip tone="brand">Career {j.careerMatchScore}%</Chip>
                 <Chip tone="blue">Visa {j.visaScore}%</Chip>
-                <Chip tone={j.ieltsStatus === "NOT_REQUIRED" ? "emerald" : j.ieltsStatus === "ENGLISH_PROFICIENCY_REQUIRED" ? "teal" : j.ieltsStatus.includes("REQUIRED") ? "amber" : "slate"}>
-                  {j.ieltsStatus.replace(/_/g, " ")}
-                </Chip>
+                {j.applyWithoutIelts ? (
+                  <Chip tone="emerald">✓ Apply without IELTS</Chip>
+                ) : (
+                  <Chip tone="amber">Needs English test — verify</Chip>
+                )}
               </div>
 
               <div className="mt-auto space-y-1.5">

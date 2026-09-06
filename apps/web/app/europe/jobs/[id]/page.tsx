@@ -24,6 +24,7 @@ interface Detail {
   visaEligibility: string;
   ieltsStatus: string;
   ieltsLabel: string;
+  applyWithoutIelts: boolean;
   sponsorshipDetected: string;
   sponsorshipNote: string;
   relocationMentioned: string;
@@ -130,7 +131,11 @@ export default async function EuropeJobDetailPage({ params }: { params: { id: st
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">IELTS</span>
-                <span className="text-xs font-semibold text-slate-800">{j.ieltsLabel}</span>
+                {j.applyWithoutIelts ? (
+                  <Chip tone="emerald">✓ Apply without IELTS</Chip>
+                ) : (
+                  <Chip tone="amber">English test required — verify alternatives</Chip>
+                )}
               </div>
               <div className="text-xs text-slate-500">{j.sponsorshipNote}</div>
             </div>

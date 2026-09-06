@@ -200,6 +200,7 @@ export const SPONSORSHIP_LABEL: Record<string, string> = {
 };
 
 export function serializeEuropeJob(j: Record<string, any>): Record<string, any> {
+  const applyWithoutIelts = ["NOT_REQUIRED", "ENGLISH_PROFICIENCY_REQUIRED"].includes(j.ieltsStatus);
   return {
     id: j.id,
     source: j.source,
@@ -219,6 +220,7 @@ export function serializeEuropeJob(j: Record<string, any>): Record<string, any> 
     careerMatchScore: j.careerMatchScore,
     visaScore: j.visaScore,
     ieltsStatus: j.ieltsStatus,
+    applyWithoutIelts,
     sponsorshipDetected: j.sponsorshipDetected,
     sponsorshipLabel: SPONSORSHIP_LABEL[j.sponsorshipDetected] ?? j.sponsorshipDetected,
     relocationMentioned: j.relocationMentioned,
