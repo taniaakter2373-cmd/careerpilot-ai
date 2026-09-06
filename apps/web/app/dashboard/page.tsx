@@ -72,6 +72,18 @@ interface RecruiterContact {
   detectedStage: string;
 }
 
+interface EuropeOverview {
+  totalJobs: number;
+  applyNowJobs: number;
+}
+
+interface AwardsList {
+  id: string;
+  name: string;
+  awardPriority: string;
+  profileFitScore: number;
+}
+
 const dayColor = (d: number | null) => (d != null && d <= 7 ? "bg-red-100 text-red-700" : d != null && d <= 30 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700");
 
 function PathCard({
@@ -117,7 +129,7 @@ function AgentPill({ label, state }: { label: string; state: "live" | "ready" })
 }
 
 export default async function DashboardPage() {
-  const [data, schs, family, deadlines, umrah, certs, recruiter] = await Promise.all([
+  const [data, schs, family, deadlines, umrah, certs, recruiter, europe, awards] = await Promise.all([
     apiGet<DashboardData>("/api/dashboard"),
     apiGet<Sch[]>("/api/scholarships"),
     apiGet<FamilyAssessment[]>("/api/family/assessments"),
@@ -125,11 +137,14 @@ export default async function DashboardPage() {
     apiGet<UmrahRow[]>("/api/umrah"),
     apiGet<Cert[]>("/api/certifications"),
     apiGet<{ contacts: RecruiterContact[] }>("/api/recruiter-contacts").then((d) => d.contacts ?? []),
+    apiGet<EuropeOverview>("/api/europe").catch(() => ({ totalJobs: 0, applyNowJobs: 0 })),
+    apiGet<AwardsList[]>("/api/awards").catch(() => []),
   ]);
 
   const eligibleScholarships = schs.filter((s) => s.match && ["ELIGIBLE", "LIKELY_ELIGIBLE"].includes(s.match.eligibilityStatus)).length;
   const freePathways = family.filter((f) => f.freePathway).length;
   const topFamily = family.filter((f) => f.freePathway).slice(0, 3);
+  const strongAwards = awards.filter((a) => ["APPLY_NOW", "HIGH_PRIORITY"].includes(a.awardPriority)).length;
 
   const upcoming = [...deadlines.jobs, ...deadlines.scholarships].filter((d) => d.daysRemaining != null && d.daysRemaining >= 0).sort((a, b) => (a.daysRemaining ?? 0) - (b.daysRemaining ?? 0)).slice(0, 5);
 
@@ -213,6 +228,42 @@ export default async function DashboardPage() {
           <div className="mt-3">
             <Link href="/recruiter" className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
               Recruiter Tracker
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-blue-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl">🇪🇺</div>
+              <div className="mt-1 text-sm font-medium text-slate-500">Europe Jobs</div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-slate-900">{europe.totalJobs}</div>
+              <div className="text-xs text-slate-400">{europe.applyNowJobs} apply now</div>
+            </div>
+          </div>
+          <div className="mt-3">
+            <Link href="/europe/jobs" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+              Europe Opportunity Finder
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-violet-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl">🏆</div>
+              <div className="mt-1 text-sm font-medium text-slate-500">Global Awards</div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-slate-900">{strongAwards}</div>
+              <div className="text-xs text-slate-400">apply / high-priority</div>
+            </div>
+          </div>
+          <div className="mt-3">
+            <Link href="/awards" className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700">
+              Global Award Finder
             </Link>
           </div>
         </div>

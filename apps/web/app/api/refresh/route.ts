@@ -16,6 +16,7 @@ import {
   type ProgrammeRequirements,
   type ScholarshipApplicant,
 } from "@careerpilot/shared";
+import { runEuropeScan } from "../_lib/europe-scan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -152,6 +153,13 @@ export async function GET() {
     }
   }
 
+  let europeScan;
+  try {
+    europeScan = await runEuropeScan();
+  } catch {
+    europeScan = { found: 0, added: 0, skipped: 0, sourceResults: [] };
+  }
+
   return NextResponse.json({
     refreshedAt: new Date().toISOString(),
     umrahPackagesRefreshed: umrahUpdated,
@@ -159,5 +167,6 @@ export async function GET() {
     jobsAdded,
     jobsRescored: rescoredJobs,
     scholarshipsRescored,
+    europeScan,
   });
 }

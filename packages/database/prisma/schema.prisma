@@ -650,3 +650,174 @@ model RecruiterInteraction {
   @@index([applicationId])
   @@index([status])
 }
+
+// =============================================================================
+// Module 7 — Europe Opportunity, Visa & IELTS Intelligence
+// =============================================================================
+
+model EnglishProfile {
+  id                   String   @id @default(cuid())
+  candidateId          String   @unique
+  ieltsStatus          String   @default("NOT_AVAILABLE") // NOT_AVAILABLE | AVAILABLE | SCHEDULED | EXEMPT
+  ieltsOverallBand     Float?
+  listeningBand        Float?
+  readingBand          Float?
+  writingBand          Float?
+  speakingBand         Float?
+  ieltsTestDate        DateTime?
+  ieltsValidity        DateTime?
+  ieltsModule          String?  // ACADEMIC | GENERAL
+  otherEnglishTest     String?  // TOEFL | PTE | DUOLINGO | OTHER | NONE
+  toeflScore           Float?
+  pteScore             Float?
+  duolingoScore        Float?
+  englishProficiency   String   @default("UNKNOWN") // BASIC | INTERMEDIATE | UPPER_INTERMEDIATE | ADVANCED | NATIVE | UNKNOWN
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([candidateId])
+}
+
+model EuropeCountryIntelligence {
+  id                     String   @id @default(cuid())
+  country                String   @unique
+  workPermitRoutes       String?  // JSON array of {route, sponsor, euBlueCard, salaryNote, docs, source, confidence}
+  sponsorshipLikelihood  String   @default("NOT_MENTIONED")
+  salaryThresholds       String?  // JSON array of {route, threshold, currency, note, source}
+  englishRequirement     String?  // JSON {status, note, ieltsOrAlt, source, confidence}
+  lastVerified           DateTime?
+  notes                  String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model EuropeJob {
+  id                   String    @id @default(cuid())
+  source               String    @default("eures") // eures | employer | linkedin | indeed | aggregated
+  sourceUrl            String?   @unique
+  title                String
+  company              String?
+  companyUrl           String?
+  country              String
+  city                 String?
+  description          String    @default("")
+  requirements         String?
+  skills               String?
+  salaryText           String?
+  salaryMinMonthly     Float?
+  salaryMaxMonthly     Float?
+  salaryCurrency       String?
+  annualEquivalent     Float?
+  employmentType       String    @default("FULL_TIME")
+  remoteType           String    @default("ANY")
+  postedDate           DateTime?
+  closingDate          DateTime?
+  applicationMethod    String    @default("MANUAL")
+  applicationUrl       String?
+  employerMentionsVisa Boolean   @default(false)
+  sponsorshipDetected  String    @default("NOT_MENTIONED") // EXPLICIT | POSSIBLE | NOT_MENTIONED | UNLIKELY
+  relocationMentioned  String    @default("NOT_MENTIONED") // YES | NO | NOT_MENTIONED
+  englishMentioned     String    @default("NOT_MENTIONED") // REQUIRED | PREFERRED | NOT_MENTIONED
+  ieltsMentioned       String    @default("NOT_MENTIONED") // REQUIRED | ALTERNATIVE_ACCEPTED | NOT_MENTIONED
+  status               String    @default("NEW") // NEW | MATCHED | APPLIED | REJECTED | EXPIRED | HIDDEN
+  careerMatchScore     Float     @default(0)
+  visaScore            Float     @default(0)
+  ieltsStatus          String    @default("UNKNOWN")
+  visaEligibility      String    @default("REQUIRES_VERIFICATION")
+  jobPriority          String    @default("P3")
+  recommendedAction    String?
+  sourceLastChecked    DateTime?
+  notes                String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  applications         EuropeApplication[]
+
+  @@index([country])
+  @@index([status])
+  @@index([jobPriority])
+}
+
+model EuropeApplication {
+  id                 String    @id @default(cuid())
+  europeJobId        String
+  europeJob          EuropeJob @relation(fields: [europeJobId], references: [id], onDelete: Cascade)
+  status             String    @default("DISCOVERED") // DISCOVERED | SAVED | APPLICATION_PLANNED | APPLIED | HR_SCREENING | INTERVIEW | ASSESSMENT | FINAL_INTERVIEW | OFFER | VISA_PROCESSING | RELOCATION | REJECTED | WITHDRAWN
+  applicationDate    DateTime?
+  deadline           DateTime?
+  company            String?
+  country            String?
+  recruiterName      String?
+  recruiterEmail     String?
+  recruiterLinkedin  String?
+  interviewDate      DateTime?
+  nextAction         String?
+  followUpDate       DateTime?
+  notes              String?
+  confirmationNumber String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([europeJobId])
+  @@index([status])
+}
+
+// =============================================================================
+// Module 8 — Global Award Finder
+// =============================================================================
+
+model Award {
+  id                 String    @id @default(cuid())
+  name               String
+  organization       String?
+  region             String?   // GLOBAL | APAC | EUROPE | NATIONAL
+  country            String?
+  category           String?
+  year               String?
+  description        String?
+  eligibility        String?
+  officialUrl        String?
+  applicationUrl     String?
+  entryFeeUsd        Float?
+  feeNote            String?
+  deadline           DateTime?
+  deadlineStatus     String    @default("UNVERIFIED") // VERIFIED | UNVERIFIED
+  nominationType     String    @default("SELF_NOMINATION") // SELF_NOMINATION | PEER_NOMINATION | APPLICATION
+  judgingCriteria    String?
+  evidenceRequired   String?
+  skillsMatched      String?
+  status             String    @default("ACTIVE") // ACTIVE | CLOSED | UPCOMING
+  source             String?
+  sourceLastChecked  DateTime?
+  eligibilityScore   Float     @default(0)
+  profileFitScore    Float     @default(0)
+  evidenceScore      Float     @default(0)
+  competitive        String    @default("UNKNOWN") // STRONG | COMPETITIVE | POSSIBLE | WEAK | UNKNOWN
+  awardPriority      String    @default("NOT_RECOMMENDED") // APPLY_NOW | HIGH_PRIORITY | PREPARE_FIRST | NOT_RECOMMENDED
+  recommendedAction  String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  applications       AwardApplication[]
+
+  @@index([region])
+  @@index([category])
+  @@index([awardPriority])
+}
+
+model AwardApplication {
+  id                 String    @id @default(cuid())
+  awardId            String
+  award              Award     @relation(fields: [awardId], references: [id], onDelete: Cascade)
+  status             String    @default("DISCOVERED") // DISCOVERED | SHORTLISTED | EVIDENCE_COLLECTION | NOMINATION_DRAFTED | INTERNAL_REVIEW | SUBMITTED | FINALIST | WINNER | NOT_SELECTED
+  deadline           DateTime?
+  feeUsd             Float?
+  submissionDate     DateTime?
+  result             String?
+  nominationDocPath  String?
+  notes              String?
+  confirmationNumber String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([awardId])
+  @@index([status])
+}

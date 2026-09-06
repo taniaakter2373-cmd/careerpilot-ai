@@ -32,6 +32,23 @@ const groups = [
     ],
   },
   {
+    label: "🇪🇺 Europe",
+    items: [
+      { href: "/europe", label: "Europe Overview" },
+      { href: "/europe/jobs", label: "Europe Jobs" },
+      { href: "/europe/countries", label: "Visa & Countries" },
+      { href: "/europe/ielts", label: "IELTS / English" },
+      { href: "/europe/applications", label: "Applications" },
+    ],
+  },
+  {
+    label: "🏆 Awards",
+    items: [
+      { href: "/awards", label: "Global Awards" },
+      { href: "/awards/applications", label: "Award Tracker" },
+    ],
+  },
+  {
     label: "Applications",
     items: [
       { href: "/applications", label: "All Applications" },
