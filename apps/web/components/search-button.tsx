@@ -12,7 +12,7 @@ export function RunSearchButton() {
   async function run() {
     setLoading(true);
     setResult(null);
-    const res = await fetch(`${API_BASE}/api/jobs/search`, {
+    const res = await fetch(`${API_BASE}/api/jobs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({}),

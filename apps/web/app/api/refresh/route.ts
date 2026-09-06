@@ -3,6 +3,7 @@ import { prisma } from "@careerpilot/database";
 import {
   computeDuplicateHash,
   JobSourceRegistry,
+  defaultSources,
   normalizeJob,
   type JobCriteria,
 } from "@careerpilot/job-sources";
@@ -87,10 +88,13 @@ export async function GET() {
   let jobsAdded = 0;
   if (c) {
     const registry = new JobSourceRegistry();
-    // Real live sources only — no demo data. (Bdjobs/LinkedIn/Bayt are browser-driven;
-    // server-side refresh keeps current scores and re-pulls reachable sources like Umrah.)
+    // Live international sources (EU/UK/USA/global remote) + Bdjobs opt-in —
+    // no demo data. Keeps scores current and pulls new listings on cron.
+    for (const source of defaultSources({ ENABLE_BDJOBS: process.env.ENABLE_BDJOBS })) {
+      registry.register(source);
+    }
     const criteria: JobCriteria = { keywords: [], roles: c.targetRoles, locations: [], countries: c.preferredLocations };
-    const { jobs: rawJobs } = await registry.search(criteria);
+    const { jobs: rawJobs, results } = await registry.search(criteria);
     jobsFound = rawJobs.length;
     const existing = await prisma.job.findMany({ select: { url: true, duplicateHash: true } });
     const urls = new Set(existing.map((j) => j.url));

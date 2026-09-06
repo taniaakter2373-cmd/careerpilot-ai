@@ -1,9 +1,23 @@
 import type { JobCriteria, JobSource, RawJob } from "./types";
+import { ArbeitnowSource, JobicySource, RemoteOkSource } from "./global-json";
+import { BdjobsSource } from "./bdjobs";
 
 export interface SourceResult {
   source: string;
   jobs: RawJob[];
   error: string | null;
+}
+
+/**
+ * Live discovery sources registered by default. Bdjobs (Bangladesh local) is
+ * opt-in via ENABLE_BDJOBS=true; Arbeitnow (EU/UK/global), Jobicy and RemoteOK
+ * (remote international incl. USA/UK) are always on so search covers the full
+ * international + Europe market.
+ */
+export function defaultSources(env: { ENABLE_BDJOBS?: string } = {}): JobSource[] {
+  const sources: JobSource[] = [new ArbeitnowSource(), new JobicySource(), new RemoteOkSource()];
+  if (env.ENABLE_BDJOBS === "true") sources.push(new BdjobsSource());
+  return sources;
 }
 
 export class JobSourceRegistry {

@@ -3,10 +3,10 @@ import { prisma } from "@careerpilot/database";
 import {
   computeDuplicateHash,
   JobSourceRegistry,
+  defaultSources,
   normalizeJob,
   type JobCriteria,
 } from "@careerpilot/job-sources";
-import { BdjobsSource } from "@careerpilot/job-sources";
 import { scoreJob, isBlockedCompany, isHrRole } from "@careerpilot/matching";
 import { loadCandidateForMatching } from "../_lib/matching";
 import { getUserId } from "../_lib/jwt";
@@ -68,8 +68,11 @@ let registry: JobSourceRegistry | null = null;
 function getRegistry() {
   if (!registry) {
     registry = new JobSourceRegistry();
-    // Real sources only (no demo data). Bdjobs is opt-in; LinkedIn/Bayt are browser-driven.
-    if (process.env.ENABLE_BDJOBS === "true") registry.register(new BdjobsSource());
+    // Live international sources always on (EU/UK/USA/global remote) + Bdjobs
+    // (Bangladesh local) opt-in — no demo data.
+    for (const source of defaultSources({ ENABLE_BDJOBS: process.env.ENABLE_BDJOBS })) {
+      registry.register(source);
+    }
   }
   return registry;
 }
