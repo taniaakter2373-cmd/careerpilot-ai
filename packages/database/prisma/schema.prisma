@@ -821,3 +821,52 @@ model AwardApplication {
   @@index([awardId])
   @@index([status])
 }
+
+// =============================================================================
+// Module 9 — International Training, Fellowship & Study-Visit Tracker
+// Physical (onsite) professional development abroad, with honest funding levels.
+// =============================================================================
+
+model TrainingProgram {
+  id                     String    @id @default(cuid())
+  name                   String
+  organization           String?
+  country                String?
+  city                   String?
+  mode                   String    @default("ONSITE") // ONSITE | ONLINE | HYBRID
+  hrRelevance            String    @default("MEDIUM") // HIGH | MEDIUM | LOW
+  rewardRelevance        String    @default("MEDIUM") // HIGH | MEDIUM | LOW
+  durationText           String?
+  deadline               DateTime?
+  nextCycleNote          String?
+  fundingLevel           String    @default("UNVERIFIED") // FULLY | MOSTLY | PARTIALLY | TUITION_ONLY | SELF | FREE_NOT_FUNDED | UNVERIFIED
+  fundingScore           Int       @default(0) // 0..100 per user's scale
+  coversAirfare          String    @default("NOT_CONFIRMED") // YES | NO | NOT_CONFIRMED
+  coversAccommodation    String    @default("NOT_CONFIRMED")
+  coversMeals            String    @default("NOT_CONFIRMED")
+  coversVisa             String    @default("NOT_CONFIRMED")
+  stipendNote            String?
+  fundingTerms           String? // official paraphrase/quote — never guessed
+  ieltsRequired          String    @default("UNKNOWN") // NO | YES | UNKNOWN
+  englishEvidenceNote    String?
+  privateSectorEligible  String    @default("UNKNOWN") // YES | NO | UNKNOWN
+  govtNominationRequired Boolean   @default(false)
+  experienceRequired     String?
+  nationalityNote        String?
+  officialUrl            String?
+  applicationUrl         String?
+  status                 String    @default("WATCHLIST") // OPEN | CLOSED | WATCHLIST | NOT_SUITABLE
+  matchScore             Int       @default(0) // 0..100
+  priority               String    @default("WATCHLIST") // APPLY_NOW | HIGH | WATCHLIST | NOT_SUITABLE
+  assessment             String    @default("MEDIUM_MATCH") // HIGH_MATCH | MEDIUM_MATCH | LOW_MATCH | NOT_ELIGIBLE
+  source                 String?
+  sourceLastChecked      DateTime?
+  notes                  String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([mode])
+  @@index([fundingLevel])
+}

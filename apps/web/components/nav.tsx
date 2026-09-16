@@ -30,6 +30,7 @@ const groups: Group[] = [
     items: [
       { href: "/scholarships", label: "Scholarships" },
       { href: "/certifications", label: "Certifications" },
+      { href: "/training", label: "Intl Training & Fellowships" },
     ],
   },
   {

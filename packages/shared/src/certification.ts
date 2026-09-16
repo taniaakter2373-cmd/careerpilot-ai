@@ -42,7 +42,8 @@ export type CertCostClass =
   | "FULL_SCHOLARSHIP"
   | "LOW_COST"
   | "DISCOUNTED"
-  | "EXPENSIVE";
+  | "EXPENSIVE"
+  | "VERIFY";
 
 export const CERT_COST_LABEL: Record<CertCostClass, string> = {
   FREE: "FREE",
@@ -50,6 +51,7 @@ export const CERT_COST_LABEL: Record<CertCostClass, string> = {
   LOW_COST: "LOW COST",
   DISCOUNTED: "DISCOUNTED",
   EXPENSIVE: "EXPENSIVE",
+  VERIFY: "FEE — VERIFY WITH PROVIDER",
 };
 
 export const CERT_COST_EMOJI: Record<CertCostClass, string> = {
@@ -58,7 +60,10 @@ export const CERT_COST_EMOJI: Record<CertCostClass, string> = {
   LOW_COST: "🔵",
   DISCOUNTED: "🟠",
   EXPENSIVE: "🔴",
+  VERIFY: "⚪",
 };
+
+export type CertMode = "ONLINE" | "OFFLINE" | "HYBRID";
 
 export interface CertCost {
   originalUsd: number;
